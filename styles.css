@@ -102,6 +102,18 @@ h1 {
   white-space: nowrap;
 }
 
+a.icon-button {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
 .progress-panel {
   padding: 16px 18px;
   margin-bottom: 20px;

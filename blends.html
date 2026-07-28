@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#fff8e7" />
+  <title>Blend Buddies</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="blends.css" />
+</head>
+<body>
+  <main class="app-shell">
+    <header class="hero">
+      <div>
+        <p class="eyebrow">Learn • Listen • Trace</p>
+        <h1>Blend Buddies</h1>
+        <p class="subtitle">Let's put two letters together and make a brand new sound! 🌈</p>
+      </div>
+      <div class="hero-actions">
+        <a class="icon-button" href="index.html">🔤 Letters</a>
+        <button id="soundToggle" class="icon-button" type="button" aria-label="Turn sound on or off" aria-pressed="true">
+          🔊 Sound On
+        </button>
+      </div>
+    </header>
+
+    <section class="progress-panel" aria-label="Learning progress">
+      <div class="progress-copy">
+        <strong id="progressText">Blend 1 of 16</strong>
+        <span id="starsText">⭐ 0 stars</span>
+      </div>
+      <div class="progress-track">
+        <div id="progressBar" class="progress-bar"></div>
+      </div>
+    </section>
+
+    <section class="letter-card blend-card">
+      <div class="blend-display" aria-live="polite">
+        <span id="blendBig">br</span>
+      </div>
+
+      <div class="blend-step">
+        <h2>1. Meet the letters</h2>
+        <p class="step-hint">Say each letter, then trace it.</p>
+        <div class="mini-trace-grid">
+          <div class="mini-trace-card">
+            <span class="mini-label" id="letter1Label">b</span>
+            <div class="mini-canvas-wrap">
+              <canvas id="letter1GuideCanvas" width="320" height="320" aria-hidden="true" class="guide"></canvas>
+              <canvas id="letter1TraceCanvas" width="320" height="320" aria-label="Trace the first letter" class="ink"></canvas>
+            </div>
+            <div class="mini-actions">
+              <button id="letter1SpeakBtn" class="small-button" type="button">🔊 Say it</button>
+              <button id="letter1ClearBtn" class="small-button" type="button">Clear</button>
+            </div>
+          </div>
+
+          <div class="mini-trace-card">
+            <span class="mini-label" id="letter2Label">r</span>
+            <div class="mini-canvas-wrap">
+              <canvas id="letter2GuideCanvas" width="320" height="320" aria-hidden="true" class="guide"></canvas>
+              <canvas id="letter2TraceCanvas" width="320" height="320" aria-label="Trace the second letter" class="ink"></canvas>
+            </div>
+            <div class="mini-actions">
+              <button id="letter2SpeakBtn" class="small-button" type="button">🔊 Say it</button>
+              <button id="letter2ClearBtn" class="small-button" type="button">Clear</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="blend-step">
+        <h2>2. Put them together</h2>
+        <p class="step-hint" id="blendPhonic">Sounds like “br”, as in “brag”.</p>
+        <div class="speech-actions">
+          <button id="speakBlendBtn" class="primary-button" type="button">🔤 Say the blend</button>
+        </div>
+
+        <div class="tracing-area">
+          <div class="canvas-heading">
+            <div>
+              <h3>Trace the blend</h3>
+              <p>Start at the green dot and follow the path. You've got this! 🌟</p>
+            </div>
+            <button id="clearBlendBtn" class="small-button" type="button">Clear ✨</button>
+          </div>
+
+          <div class="canvas-wrap">
+            <canvas id="blendGuideCanvas" width="700" height="700" aria-hidden="true"></canvas>
+            <canvas id="blendTraceCanvas" width="700" height="700" aria-label="Blend tracing area"></canvas>
+            <div id="blendSuccessMessage" class="success-message" aria-live="polite">
+              Great tracing! ⭐
+            </div>
+          </div>
+
+          <div class="trace-actions">
+            <button id="checkBlendBtn" class="primary-button" type="button">See how I did! ✨</button>
+            <button id="showBlendGuideBtn" class="secondary-button" type="button">Hide guide</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="blend-step">
+        <h2 id="wordsHeading">3. Words with “br”</h2>
+        <p class="step-hint">Tap a word to hear it!</p>
+        <div class="word-grid" id="wordGrid"></div>
+      </div>
+    </section>
+
+    <nav class="navigation" aria-label="Blend navigation">
+      <button id="previousBtn" class="nav-button" type="button">← Back</button>
+      <div id="blendDots" class="letter-dots" aria-label="Choose a blend"></div>
+      <button id="nextBtn" class="nav-button" type="button">Next →</button>
+    </nav>
+  </main>
+
+  <script src="blends.js"></script>
+</body>
+</html>
