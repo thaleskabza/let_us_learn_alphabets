@@ -27,8 +27,15 @@ const letters = [
   { letter: "Z", word: "Zebra", emoji: "🦓", soundLabel: "zzz", soundSpeech: "zzz, as in zebra" }
 ];
 
+const guideCanvas = document.getElementById("guideCanvas");
+const guideCtx = guideCanvas.getContext("2d");
 const canvas = document.getElementById("traceCanvas");
-const ctx = canvas.getContext("2d");
+const ctx = canvas.getContext("2d", { willReadFrequently: true });
+
+const maskCanvas = document.createElement("canvas");
+maskCanvas.width = canvas.width;
+maskCanvas.height = canvas.height;
+const maskCtx = maskCanvas.getContext("2d", { willReadFrequently: true });
 
 const uppercaseLetter = document.getElementById("uppercaseLetter");
 const lowercaseLetter = document.getElementById("lowercaseLetter");
@@ -52,6 +59,20 @@ const showGuideBtn = document.getElementById("showGuideBtn");
 const previousBtn = document.getElementById("previousBtn");
 const nextBtn = document.getElementById("nextBtn");
 
+const STORAGE_KEY = "littleLetterTracer.progress";
+
+const successMessages = [
+  { text: "Great tracing! ⭐", speech: "Great job! You traced the letter" },
+  { text: "Wonderful! ⭐", speech: "Wonderful! You traced the letter" },
+  { text: "You did it! ⭐", speech: "You did it! You traced the letter" }
+];
+
+const tryAgainMessages = [
+  { text: "Nice try! Trace a little more. 💜", speech: "Nice try! Let's trace a little more together." },
+  { text: "So close! Keep going. 💜", speech: "So close! Keep tracing a little more." },
+  { text: "You're doing great, just a bit more! 💜", speech: "You're doing great. Let's trace a little bit more." }
+];
+
 let currentIndex = 0;
 let currentCase = "uppercase";
 let drawing = false;
@@ -59,15 +80,67 @@ let guideVisible = true;
 let soundEnabled = true;
 let completedLetters = new Set();
 let stars = 0;
-let inkPixels = 0;
 let selectedVoice = null;
+let guideMask = null;
+let guideMaskTotal = 0;
+
+function loadProgress() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    if (Number.isInteger(data.currentIndex) && data.currentIndex >= 0 && data.currentIndex < letters.length) {
+      currentIndex = data.currentIndex;
+    }
+    if (Array.isArray(data.completedLetters)) {
+      completedLetters = new Set(
+        data.completedLetters.filter(n => Number.isInteger(n) && n >= 0 && n < letters.length)
+      );
+    }
+    if (Number.isInteger(data.stars) && data.stars >= 0) {
+      stars = data.stars;
+    }
+  } catch (err) {
+    // Storage may be unavailable or corrupted (e.g. private browsing) - just start fresh.
+  }
+}
+
+function saveProgress() {
+  try {
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        currentIndex,
+        stars,
+        completedLetters: Array.from(completedLetters)
+      })
+    );
+  } catch (err) {
+    // Storage may be unavailable (e.g. private browsing) - progress just won't persist.
+  }
+}
+
+const KID_VOICE_PATTERN = /\bkid\b|\bchild\b|junior|\bjr\b|\bboy\b|\bgirl\b|kathy/i;
+const FEMALE_VOICE_PATTERN = /female|samantha|victoria|karen|moira|tessa|fiona|serena|zira|susan|kate|allison|ava|emma|joanna|kimberly|salli|nicole|amy|hazel|libby|olivia|sonia/i;
+
+function pickVoice(voices, langPattern) {
+  const inLang = voices.filter(v => langPattern.test(v.lang));
+  return (
+    inLang.find(v => KID_VOICE_PATTERN.test(v.name)) ||
+    inLang.find(v => FEMALE_VOICE_PATTERN.test(v.name)) ||
+    inLang[0] ||
+    null
+  );
+}
 
 function setupVoice() {
   const voices = window.speechSynthesis?.getVoices?.() || [];
   selectedVoice =
-    voices.find(v => /en-GB/i.test(v.lang)) ||
-    voices.find(v => /en-ZA/i.test(v.lang)) ||
-    voices.find(v => /^en/i.test(v.lang)) ||
+    pickVoice(voices, /en-GB/i) ||
+    pickVoice(voices, /en-ZA/i) ||
+    pickVoice(voices, /^en/i) ||
+    voices.find(v => KID_VOICE_PATTERN.test(v.name)) ||
+    voices.find(v => FEMALE_VOICE_PATTERN.test(v.name)) ||
     null;
 }
 
@@ -83,7 +156,7 @@ function speak(text, rate = 0.82) {
   utterance.lang = selectedVoice?.lang || "en-GB";
   utterance.voice = selectedVoice;
   utterance.rate = rate;
-  utterance.pitch = 1.08;
+  utterance.pitch = 1.35;
   utterance.volume = 1;
   window.speechSynthesis.speak(utterance);
 }
@@ -111,7 +184,7 @@ function updateLetter(announce = false) {
   uppercaseLetter.textContent = item.letter;
   lowercaseLetter.textContent = item.letter.toLowerCase();
   letterTitle.textContent = `${item.letter} is for ${item.word} ${item.emoji}`;
-  phonicText.textContent = `Sound: “${item.soundLabel}”`;
+  phonicText.textContent = `Sounds like “${item.soundLabel}”`;
   progressText.textContent = `Letter ${currentIndex + 1} of ${letters.length}`;
   starsText.textContent = `⭐ ${stars} ${stars === 1 ? "star" : "stars"}`;
   progressBar.style.width = `${((currentIndex + 1) / letters.length) * 100}%`;
@@ -120,51 +193,77 @@ function updateLetter(announce = false) {
   nextBtn.textContent = currentIndex === letters.length - 1 ? "Start again ↻" : "Next →";
 
   renderDots();
+  buildGuideMask();
+  drawGuide();
   clearCanvas();
+  saveProgress();
   if (announce) {
     speak(`${item.letter}. ${item.letter} is for ${item.word}.`);
   }
 }
 
+function letterFont() {
+  return currentCase === "uppercase"
+    ? "bold 500px Arial, sans-serif"
+    : "bold 520px Arial, sans-serif";
+}
+
+function displayLetter() {
+  const item = letters[currentIndex];
+  return currentCase === "uppercase" ? item.letter : item.letter.toLowerCase();
+}
+
+function buildGuideMask() {
+  maskCtx.clearRect(0, 0, maskCanvas.width, maskCanvas.height);
+  maskCtx.textAlign = "center";
+  maskCtx.textBaseline = "middle";
+  maskCtx.font = letterFont();
+  maskCtx.lineWidth = 70;
+  maskCtx.strokeStyle = "#000";
+  maskCtx.strokeText(displayLetter(), maskCanvas.width / 2, maskCanvas.height / 2 + 28);
+
+  const data = maskCtx.getImageData(0, 0, maskCanvas.width, maskCanvas.height).data;
+  guideMask = new Uint8Array(maskCanvas.width * maskCanvas.height);
+  guideMaskTotal = 0;
+  for (let i = 0, p = 0; i < data.length; i += 4, p += 1) {
+    if (data[i + 3] > 0) {
+      guideMask[p] = 1;
+      guideMaskTotal += 1;
+    }
+  }
+}
+
 function drawGuide() {
-  ctx.save();
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  guideCtx.save();
+  guideCtx.clearRect(0, 0, guideCanvas.width, guideCanvas.height);
 
   if (guideVisible) {
-    const item = letters[currentIndex];
-    const displayLetter = currentCase === "uppercase"
-      ? item.letter
-      : item.letter.toLowerCase();
+    guideCtx.textAlign = "center";
+    guideCtx.textBaseline = "middle";
+    guideCtx.font = letterFont();
+    guideCtx.lineWidth = 18;
+    guideCtx.setLineDash([24, 20]);
+    guideCtx.strokeStyle = "rgba(108, 92, 231, 0.34)";
+    guideCtx.strokeText(displayLetter(), guideCanvas.width / 2, guideCanvas.height / 2 + 28);
+    guideCtx.setLineDash([]);
 
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.font = currentCase === "uppercase"
-      ? "bold 500px Arial, sans-serif"
-      : "bold 520px Arial, sans-serif";
-    ctx.lineWidth = 18;
-    ctx.setLineDash([24, 20]);
-    ctx.strokeStyle = "rgba(108, 92, 231, 0.34)";
-    ctx.strokeText(displayLetter, canvas.width / 2, canvas.height / 2 + 28);
-    ctx.setLineDash([]);
+    guideCtx.fillStyle = "#2ecc71";
+    guideCtx.beginPath();
+    guideCtx.arc(guideCanvas.width * 0.32, guideCanvas.height * 0.18, 14, 0, Math.PI * 2);
+    guideCtx.fill();
 
-    ctx.fillStyle = "#2ecc71";
-    ctx.beginPath();
-    ctx.arc(canvas.width * 0.32, canvas.height * 0.18, 14, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.fillStyle = "#263238";
-    ctx.font = "bold 24px Arial";
-    ctx.textAlign = "left";
-    ctx.fillText("START", canvas.width * 0.32 + 22, canvas.height * 0.18 + 8);
+    guideCtx.fillStyle = "#263238";
+    guideCtx.font = "bold 24px Arial";
+    guideCtx.textAlign = "left";
+    guideCtx.fillText("START", guideCanvas.width * 0.32 + 22, guideCanvas.height * 0.18 + 8);
   }
 
-  ctx.restore();
+  guideCtx.restore();
 }
 
 function clearCanvas() {
-  inkPixels = 0;
   successMessage.classList.remove("show");
-  drawGuide();
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
 
 function getCanvasPoint(event) {
@@ -196,8 +295,6 @@ function draw(event) {
   ctx.lineWidth = 24;
   ctx.lineTo(point.x, point.y);
   ctx.stroke();
-
-  inkPixels += 24;
 }
 
 function stopDrawing(event) {
@@ -206,22 +303,40 @@ function stopDrawing(event) {
   ctx.closePath();
 }
 
+function measureTracing() {
+  const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  let inkCount = 0;
+  let onGuideCount = 0;
+  for (let i = 0, p = 0; i < data.length; i += 4, p += 1) {
+    if (data[i + 3] > 10) {
+      inkCount += 1;
+      if (guideMask && guideMask[p]) onGuideCount += 1;
+    }
+  }
+  const accuracy = inkCount > 0 ? onGuideCount / inkCount : 0;
+  const minInk = Math.max(300, guideMaskTotal * 0.04);
+  return inkCount > minInk && accuracy > 0.45;
+}
+
 function checkTracing() {
-  const enoughTracing = inkPixels > 1300;
+  const enoughTracing = measureTracing();
   if (enoughTracing) {
     if (!completedLetters.has(currentIndex)) {
       completedLetters.add(currentIndex);
       stars += 1;
     }
-    successMessage.textContent = "Great tracing! ⭐";
+    const msg = successMessages[Math.floor(Math.random() * successMessages.length)];
+    successMessage.textContent = msg.text;
     successMessage.classList.add("show");
-    speak(`Great job! You traced the letter ${letters[currentIndex].letter}.`);
+    speak(`${msg.speech} ${letters[currentIndex].letter}.`);
     renderDots();
     starsText.textContent = `⭐ ${stars} ${stars === 1 ? "star" : "stars"}`;
+    saveProgress();
   } else {
-    successMessage.textContent = "Keep tracing a little more!";
+    const msg = tryAgainMessages[Math.floor(Math.random() * tryAgainMessages.length)];
+    successMessage.textContent = msg.text;
     successMessage.classList.add("show");
-    speak("Keep going. Trace a little more of the letter.");
+    speak(msg.speech);
   }
 
   window.setTimeout(() => {
@@ -251,7 +366,7 @@ speakWordBtn.addEventListener("click", () => {
 soundToggle.addEventListener("click", () => {
   soundEnabled = !soundEnabled;
   soundToggle.textContent = soundEnabled ? "🔊 Sound On" : "🔇 Sound Off";
-  soundToggle.setAttribute("aria-pressed", String(!soundEnabled));
+  soundToggle.setAttribute("aria-pressed", String(soundEnabled));
   if (!soundEnabled && "speechSynthesis" in window) {
     window.speechSynthesis.cancel();
   }
@@ -261,6 +376,8 @@ uppercaseBtn.addEventListener("click", () => {
   currentCase = "uppercase";
   uppercaseBtn.classList.add("active");
   lowercaseBtn.classList.remove("active");
+  buildGuideMask();
+  drawGuide();
   clearCanvas();
 });
 
@@ -268,6 +385,8 @@ lowercaseBtn.addEventListener("click", () => {
   currentCase = "lowercase";
   lowercaseBtn.classList.add("active");
   uppercaseBtn.classList.remove("active");
+  buildGuideMask();
+  drawGuide();
   clearCanvas();
 });
 
@@ -277,7 +396,7 @@ checkBtn.addEventListener("click", checkTracing);
 showGuideBtn.addEventListener("click", () => {
   guideVisible = !guideVisible;
   showGuideBtn.textContent = guideVisible ? "Hide guide" : "Show guide";
-  clearCanvas();
+  drawGuide();
 });
 
 previousBtn.addEventListener("click", () => {
@@ -292,9 +411,6 @@ nextBtn.addEventListener("click", () => {
   updateLetter(true);
 });
 
-window.addEventListener("resize", () => {
-  drawGuide();
-});
-
+loadProgress();
 renderDots();
 updateLetter(false);

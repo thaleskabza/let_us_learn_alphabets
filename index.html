@@ -13,9 +13,9 @@
       <div>
         <p class="eyebrow">Learn • Listen • Trace</p>
         <h1>Little Letter Tracer</h1>
-        <p class="subtitle">Hear the letter, learn its sound, and trace it with your finger.</p>
+        <p class="subtitle">Let's hear a letter, sing out its sound, and trace it together! 🌈</p>
       </div>
-      <button id="soundToggle" class="icon-button" type="button" aria-label="Turn sound on or off">
+      <button id="soundToggle" class="icon-button" type="button" aria-label="Turn sound on or off" aria-pressed="true">
         🔊 Sound On
       </button>
     </header>
@@ -38,7 +38,7 @@
         </div>
 
         <h2 id="letterTitle">A is for Apple</h2>
-        <p id="phonicText" class="phonic-text">Sound: “ah”</p>
+        <p id="phonicText" class="phonic-text">Sounds like “ah”</p>
 
         <div class="speech-actions">
           <button id="speakNameBtn" class="primary-button" type="button">
@@ -52,22 +52,23 @@
           </button>
         </div>
 
-        <div class="case-switch" role="group" aria-label="Choose letter case">
-          <button id="uppercaseBtn" class="case-button active" type="button">Uppercase</button>
-          <button id="lowercaseBtn" class="case-button" type="button">Lowercase</button>
+        <div class="case-switch" role="group" aria-label="Pick a BIG or small letter">
+          <button id="uppercaseBtn" class="case-button active" type="button">BIG letter</button>
+          <button id="lowercaseBtn" class="case-button" type="button">small letter</button>
         </div>
       </div>
 
       <div class="tracing-area">
         <div class="canvas-heading">
           <div>
-            <h3>Trace the letter</h3>
-            <p>Start at the green dot and follow the letter shape.</p>
+            <h3>Let's trace together!</h3>
+            <p>Start at the green dot and follow the path. You've got this! 🌟</p>
           </div>
-          <button id="clearBtn" class="small-button" type="button">Clear</button>
+          <button id="clearBtn" class="small-button" type="button">Clear ✨</button>
         </div>
 
         <div class="canvas-wrap">
+          <canvas id="guideCanvas" width="700" height="700" aria-hidden="true"></canvas>
           <canvas id="traceCanvas" width="700" height="700" aria-label="Letter tracing area"></canvas>
           <div id="successMessage" class="success-message" aria-live="polite">
             Great tracing! ⭐
@@ -75,14 +76,14 @@
         </div>
 
         <div class="trace-actions">
-          <button id="checkBtn" class="primary-button" type="button">Check my tracing</button>
+          <button id="checkBtn" class="primary-button" type="button">See how I did! ✨</button>
           <button id="showGuideBtn" class="secondary-button" type="button">Hide guide</button>
         </div>
       </div>
     </section>
 
     <nav class="navigation" aria-label="Letter navigation">
-      <button id="previousBtn" class="nav-button" type="button">← Previous</button>
+      <button id="previousBtn" class="nav-button" type="button">← Back</button>
       <div id="letterDots" class="letter-dots" aria-label="Choose a letter"></div>
       <button id="nextBtn" class="nav-button" type="button">Next →</button>
     </nav>

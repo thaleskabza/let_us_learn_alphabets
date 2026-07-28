@@ -282,6 +282,16 @@ canvas {
   touch-action: none;
 }
 
+#guideCanvas,
+#traceCanvas {
+  position: absolute;
+  inset: 0;
+}
+
+#guideCanvas {
+  pointer-events: none;
+}
+
 .success-message {
   position: absolute;
   left: 50%;
