@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#fff8e7" />
+  <title>Little Letter Tracer</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="app-shell">
+    <header class="hero">
+      <div>
+        <p class="eyebrow">Learn • Listen • Trace</p>
+        <h1>Little Letter Tracer</h1>
+        <p class="subtitle">Hear the letter, learn its sound, and trace it with your finger.</p>
+      </div>
+      <button id="soundToggle" class="icon-button" type="button" aria-label="Turn sound on or off">
+        🔊 Sound On
+      </button>
+    </header>
+
+    <section class="progress-panel" aria-label="Learning progress">
+      <div class="progress-copy">
+        <strong id="progressText">Letter 1 of 26</strong>
+        <span id="starsText">⭐ 0 stars</span>
+      </div>
+      <div class="progress-track">
+        <div id="progressBar" class="progress-bar"></div>
+      </div>
+    </section>
+
+    <section class="letter-card">
+      <div class="letter-info">
+        <div class="letter-display" aria-live="polite">
+          <span id="uppercaseLetter">A</span>
+          <span id="lowercaseLetter">a</span>
+        </div>
+
+        <h2 id="letterTitle">A is for Apple</h2>
+        <p id="phonicText" class="phonic-text">Sound: “ah”</p>
+
+        <div class="speech-actions">
+          <button id="speakNameBtn" class="primary-button" type="button">
+            🔤 Say the letter
+          </button>
+          <button id="speakSoundBtn" class="secondary-button" type="button">
+            👂 Say the sound
+          </button>
+          <button id="speakWordBtn" class="secondary-button" type="button">
+            🍎 Say the word
+          </button>
+        </div>
+
+        <div class="case-switch" role="group" aria-label="Choose letter case">
+          <button id="uppercaseBtn" class="case-button active" type="button">Uppercase</button>
+          <button id="lowercaseBtn" class="case-button" type="button">Lowercase</button>
+        </div>
+      </div>
+
+      <div class="tracing-area">
+        <div class="canvas-heading">
+          <div>
+            <h3>Trace the letter</h3>
+            <p>Start at the green dot and follow the letter shape.</p>
+          </div>
+          <button id="clearBtn" class="small-button" type="button">Clear</button>
+        </div>
+
+        <div class="canvas-wrap">
+          <canvas id="traceCanvas" width="700" height="700" aria-label="Letter tracing area"></canvas>
+          <div id="successMessage" class="success-message" aria-live="polite">
+            Great tracing! ⭐
+          </div>
+        </div>
+
+        <div class="trace-actions">
+          <button id="checkBtn" class="primary-button" type="button">Check my tracing</button>
+          <button id="showGuideBtn" class="secondary-button" type="button">Hide guide</button>
+        </div>
+      </div>
+    </section>
+
+    <nav class="navigation" aria-label="Letter navigation">
+      <button id="previousBtn" class="nav-button" type="button">← Previous</button>
+      <div id="letterDots" class="letter-dots" aria-label="Choose a letter"></div>
+      <button id="nextBtn" class="nav-button" type="button">Next →</button>
+    </nav>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
