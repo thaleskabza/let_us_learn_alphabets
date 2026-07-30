@@ -187,7 +187,7 @@ function updateLetter(announce = false) {
   phonicText.textContent = `Sounds like “${item.soundLabel}”`;
   progressText.textContent = `Letter ${currentIndex + 1} of ${letters.length}`;
   starsText.textContent = `⭐ ${stars} ${stars === 1 ? "star" : "stars"}`;
-  progressBar.style.width = `${((currentIndex + 1) / letters.length) * 100}%`;
+  progressBar.style.transform = `scaleX(${(currentIndex + 1) / letters.length})`;
 
   previousBtn.disabled = currentIndex === 0;
   nextBtn.textContent = currentIndex === letters.length - 1 ? "Start again ↻" : "Next →";
@@ -237,26 +237,24 @@ function drawGuide() {
   guideCtx.save();
   guideCtx.clearRect(0, 0, guideCanvas.width, guideCanvas.height);
 
-  if (guideVisible) {
-    guideCtx.textAlign = "center";
-    guideCtx.textBaseline = "middle";
-    guideCtx.font = letterFont();
-    guideCtx.lineWidth = 18;
-    guideCtx.setLineDash([24, 20]);
-    guideCtx.strokeStyle = "rgba(108, 92, 231, 0.34)";
-    guideCtx.strokeText(displayLetter(), guideCanvas.width / 2, guideCanvas.height / 2 + 28);
-    guideCtx.setLineDash([]);
+  guideCtx.textAlign = "center";
+  guideCtx.textBaseline = "middle";
+  guideCtx.font = letterFont();
+  guideCtx.lineWidth = 18;
+  guideCtx.setLineDash([24, 20]);
+  guideCtx.strokeStyle = "rgba(108, 92, 231, 0.34)";
+  guideCtx.strokeText(displayLetter(), guideCanvas.width / 2, guideCanvas.height / 2 + 28);
+  guideCtx.setLineDash([]);
 
-    guideCtx.fillStyle = "#2ecc71";
-    guideCtx.beginPath();
-    guideCtx.arc(guideCanvas.width * 0.32, guideCanvas.height * 0.18, 14, 0, Math.PI * 2);
-    guideCtx.fill();
+  guideCtx.fillStyle = "#2ecc71";
+  guideCtx.beginPath();
+  guideCtx.arc(guideCanvas.width * 0.32, guideCanvas.height * 0.18, 14, 0, Math.PI * 2);
+  guideCtx.fill();
 
-    guideCtx.fillStyle = "#263238";
-    guideCtx.font = "bold 24px Arial";
-    guideCtx.textAlign = "left";
-    guideCtx.fillText("START", guideCanvas.width * 0.32 + 22, guideCanvas.height * 0.18 + 8);
-  }
+  guideCtx.fillStyle = "#263238";
+  guideCtx.font = "bold 24px Arial";
+  guideCtx.textAlign = "left";
+  guideCtx.fillText("START", guideCanvas.width * 0.32 + 22, guideCanvas.height * 0.18 + 8);
 
   guideCtx.restore();
 }
@@ -318,10 +316,17 @@ function measureTracing() {
   return inkCount > minInk && accuracy > 0.45;
 }
 
+function pulseStars() {
+  starsText.classList.remove("pulse-pop");
+  void starsText.offsetWidth;
+  starsText.classList.add("pulse-pop");
+}
+
 function checkTracing() {
   const enoughTracing = measureTracing();
   if (enoughTracing) {
-    if (!completedLetters.has(currentIndex)) {
+    const earnedNewStar = !completedLetters.has(currentIndex);
+    if (earnedNewStar) {
       completedLetters.add(currentIndex);
       stars += 1;
     }
@@ -331,6 +336,7 @@ function checkTracing() {
     speak(`${msg.speech} ${letters[currentIndex].letter}.`);
     renderDots();
     starsText.textContent = `⭐ ${stars} ${stars === 1 ? "star" : "stars"}`;
+    if (earnedNewStar) pulseStars();
     saveProgress();
   } else {
     const msg = tryAgainMessages[Math.floor(Math.random() * tryAgainMessages.length)];
@@ -396,7 +402,7 @@ checkBtn.addEventListener("click", checkTracing);
 showGuideBtn.addEventListener("click", () => {
   guideVisible = !guideVisible;
   showGuideBtn.textContent = guideVisible ? "Hide guide" : "Show guide";
-  drawGuide();
+  guideCanvas.style.opacity = guideVisible ? "1" : "0";
 });
 
 previousBtn.addEventListener("click", () => {

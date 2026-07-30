@@ -31,6 +31,11 @@ const tryAgainMessages = [
   { text: "You're doing great, just a bit more! 💜", speech: "You're doing great. Let's trace a little bit more." }
 ];
 
+const LETTER_PHONICS = {
+  b: "buh", c: "kuh", d: "duh", f: "fff", g: "guh", l: "lll",
+  m: "mmm", n: "nnn", p: "puh", r: "rrr", s: "sss", t: "tuh", w: "wuh"
+};
+
 const KID_VOICE_PATTERN = /\bkid\b|\bchild\b|junior|\bjr\b|\bboy\b|\bgirl\b|kathy/i;
 const FEMALE_VOICE_PATTERN = /female|samantha|victoria|karen|moira|tessa|fiona|serena|zira|susan|kate|allison|ava|emma|joanna|kimberly|salli|nicole|amy|hazel|libby|olivia|sonia/i;
 
@@ -62,16 +67,55 @@ if ("speechSynthesis" in window) {
   window.speechSynthesis.onvoiceschanged = setupVoice;
 }
 
+let speechGeneration = 0;
+
 function speak(text, rate = 0.82) {
+  speakSequence([{ text, rate }]);
+}
+
+function speakSequence(parts) {
   if (!soundEnabled || !("speechSynthesis" in window)) return;
   window.speechSynthesis.cancel();
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = selectedVoice?.lang || "en-GB";
-  utterance.voice = selectedVoice;
-  utterance.rate = rate;
-  utterance.pitch = 1.35;
-  utterance.volume = 1;
-  window.speechSynthesis.speak(utterance);
+  speechGeneration += 1;
+  const myGeneration = speechGeneration;
+
+  let i = 0;
+  function playNext() {
+    if (myGeneration !== speechGeneration) return;
+    if (i >= parts.length) return;
+    const part = parts[i];
+    i += 1;
+    const utterance = new SpeechSynthesisUtterance(part.text);
+    utterance.lang = selectedVoice?.lang || "en-GB";
+    utterance.voice = selectedVoice;
+    utterance.rate = part.rate ?? 0.82;
+    utterance.pitch = 1.35;
+    utterance.volume = 1;
+    utterance.onend = () => window.setTimeout(playNext, part.pauseAfter ?? 150);
+    utterance.onerror = () => window.setTimeout(playNext, part.pauseAfter ?? 150);
+    window.speechSynthesis.speak(utterance);
+  }
+  playNext();
+}
+
+function speakLetterPhonic(letter) {
+  const phonic = LETTER_PHONICS[letter] || letter;
+  speakSequence([
+    { text: `${letter.toUpperCase()}.`, pauseAfter: 200 },
+    { text: phonic }
+  ]);
+}
+
+function speakBlendSequence(item) {
+  const parts = [];
+  item.letters.forEach(letter => {
+    const phonic = LETTER_PHONICS[letter] || letter;
+    parts.push({ text: `${letter.toUpperCase()}.`, pauseAfter: 150 });
+    parts.push({ text: phonic, pauseAfter: 300 });
+  });
+  parts.push({ text: item.blend, rate: 0.7, pauseAfter: 600 });
+  parts.push({ text: item.words[0], rate: 0.78 });
+  speakSequence(parts);
 }
 
 class TracePad {
@@ -150,7 +194,7 @@ class TracePad {
 
   setGuideVisible(visible) {
     this.guideVisible = visible;
-    this._drawGuide();
+    this.guideCanvas.style.opacity = visible ? "1" : "0";
   }
 
   _drawGuide() {
@@ -159,27 +203,25 @@ class TracePad {
     g.save();
     g.clearRect(0, 0, size, size);
 
-    if (this.guideVisible) {
-      g.textAlign = "center";
-      g.textBaseline = "middle";
-      g.font = `bold ${this.fontPx}px Arial, sans-serif`;
-      g.lineWidth = this.guideLineWidth;
-      g.setLineDash([this.guideLineWidth * 1.3, this.guideLineWidth * 1.1]);
-      g.strokeStyle = "rgba(108, 92, 231, 0.34)";
-      g.strokeText(this.text, size / 2, size / 2 + size * 0.04);
-      g.setLineDash([]);
+    g.textAlign = "center";
+    g.textBaseline = "middle";
+    g.font = `bold ${this.fontPx}px Arial, sans-serif`;
+    g.lineWidth = this.guideLineWidth;
+    g.setLineDash([this.guideLineWidth * 1.3, this.guideLineWidth * 1.1]);
+    g.strokeStyle = "rgba(108, 92, 231, 0.34)";
+    g.strokeText(this.text, size / 2, size / 2 + size * 0.04);
+    g.setLineDash([]);
 
-      g.fillStyle = "#2ecc71";
-      g.beginPath();
-      g.arc(size * 0.28, size * 0.2, Math.max(6, size * 0.02), 0, Math.PI * 2);
-      g.fill();
+    g.fillStyle = "#2ecc71";
+    g.beginPath();
+    g.arc(size * 0.28, size * 0.2, Math.max(6, size * 0.02), 0, Math.PI * 2);
+    g.fill();
 
-      if (this.showLabel) {
-        g.fillStyle = "#263238";
-        g.font = `bold ${Math.max(14, Math.round(size * 0.034))}px Arial`;
-        g.textAlign = "left";
-        g.fillText("START", size * 0.28 + size * 0.03, size * 0.2 + size * 0.01);
-      }
+    if (this.showLabel) {
+      g.fillStyle = "#263238";
+      g.font = `bold ${Math.max(14, Math.round(size * 0.034))}px Arial`;
+      g.textAlign = "left";
+      g.fillText("START", size * 0.28 + size * 0.03, size * 0.2 + size * 0.01);
     }
 
     g.restore();
@@ -364,7 +406,7 @@ function updateBlend(announce = false) {
   wordsHeading.textContent = `3. Words with “${item.blend}”`;
   progressText.textContent = `Blend ${currentIndex + 1} of ${blends.length}`;
   starsText.textContent = `⭐ ${stars} ${stars === 1 ? "star" : "stars"}`;
-  progressBar.style.width = `${((currentIndex + 1) / blends.length) * 100}%`;
+  progressBar.style.transform = `scaleX(${(currentIndex + 1) / blends.length})`;
 
   previousBtn.disabled = currentIndex === 0;
   nextBtn.textContent = currentIndex === blends.length - 1 ? "Start again ↻" : "Next →";
@@ -381,8 +423,14 @@ function updateBlend(announce = false) {
   saveProgress();
 
   if (announce) {
-    speak(`${item.blend}. ${item.blend}, as in ${item.words[0]}.`);
+    speakBlendSequence(item);
   }
+}
+
+function pulseStars() {
+  starsText.classList.remove("pulse-pop");
+  void starsText.offsetWidth;
+  starsText.classList.add("pulse-pop");
 }
 
 checkBlendBtn.addEventListener("click", () => {
@@ -390,7 +438,8 @@ checkBlendBtn.addEventListener("click", () => {
   const enoughTracing = blendPad.checkTrace();
 
   if (enoughTracing) {
-    if (!completedBlends.has(currentIndex)) {
+    const earnedNewStar = !completedBlends.has(currentIndex);
+    if (earnedNewStar) {
       completedBlends.add(currentIndex);
       stars += 1;
     }
@@ -400,6 +449,7 @@ checkBlendBtn.addEventListener("click", () => {
     speak(`${msg.speech} ${item.blend}.`);
     renderDots();
     starsText.textContent = `⭐ ${stars} ${stars === 1 ? "star" : "stars"}`;
+    if (earnedNewStar) pulseStars();
     saveProgress();
   } else {
     const msg = tryAgainMessages[Math.floor(Math.random() * tryAgainMessages.length)];
@@ -426,15 +476,18 @@ showBlendGuideBtn.addEventListener("click", () => {
 
 speakBlendBtn.addEventListener("click", () => {
   const item = blends[currentIndex];
-  speak(`${item.blend}, as in ${item.words[0]}.`);
+  speakSequence([
+    { text: item.blend, rate: 0.7, pauseAfter: 600 },
+    { text: item.words[0], rate: 0.78 }
+  ]);
 });
 
 letter1SpeakBtn.addEventListener("click", () => {
-  speak(`The letter is ${blends[currentIndex].letters[0].toUpperCase()}.`);
+  speakLetterPhonic(blends[currentIndex].letters[0]);
 });
 
 letter2SpeakBtn.addEventListener("click", () => {
-  speak(`The letter is ${blends[currentIndex].letters[1].toUpperCase()}.`);
+  speakLetterPhonic(blends[currentIndex].letters[1]);
 });
 
 letter1ClearBtn.addEventListener("click", () => letterPad1.clearInk());
