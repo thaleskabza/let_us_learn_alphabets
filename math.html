@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#fff8e7" />
+  <title>Number Friends</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="math.css" />
+</head>
+<body>
+  <main class="app-shell">
+    <header class="hero">
+      <div>
+        <p class="eyebrow">Count • Trace • Solve</p>
+        <h1>Number Friends</h1>
+        <p class="subtitle">Let's trace numbers, count in twos and fives, and solve puzzles together! 🔢</p>
+      </div>
+      <div class="hero-actions">
+        <a class="icon-button" href="index.html">🔤 Letters</a>
+        <a class="icon-button" href="blends.html">🧩 Blends</a>
+        <button id="soundToggle" class="icon-button" type="button" aria-label="Turn sound on or off" aria-pressed="true">
+          🔊 Sound On
+        </button>
+      </div>
+    </header>
+
+    <section class="progress-panel" aria-label="Learning progress">
+      <div class="progress-copy">
+        <strong id="progressText">Number 0 (0-100)</strong>
+        <span id="starsText">⭐ 0 stars</span>
+      </div>
+      <div class="progress-track">
+        <div id="progressBar" class="progress-bar"></div>
+      </div>
+    </section>
+
+    <nav class="math-tabs" aria-label="Choose an activity">
+      <button id="tabNumbersBtn" class="math-tab active" type="button">🔢 Numbers</button>
+      <button id="tabCountingBtn" class="math-tab" type="button">🐇 Counting</button>
+      <button id="tabEquationsBtn" class="math-tab" type="button">➕ Plus &amp; Minus</button>
+    </nav>
+
+    <div id="numbersView" class="math-view">
+      <section class="letter-card">
+        <div class="letter-info">
+          <div class="number-display" aria-live="polite">
+            <span id="numberDisplay">0</span>
+          </div>
+          <h2 id="numberWord">zero</h2>
+          <div class="speech-actions">
+            <button id="speakNumberBtn" class="primary-button" type="button">🔤 Say the number</button>
+          </div>
+          <div class="number-jump">
+            <label for="numberJumpSelect">Jump to a number</label>
+            <select id="numberJumpSelect"></select>
+          </div>
+        </div>
+
+        <div class="tracing-area">
+          <div class="canvas-heading">
+            <div>
+              <h3>Trace the number</h3>
+              <p>Start at the green dot and follow the path. You've got this! 🌟</p>
+            </div>
+            <button id="clearNumberBtn" class="small-button" type="button">Clear ✨</button>
+          </div>
+
+          <div class="canvas-wrap">
+            <canvas id="numberGuideCanvas" width="700" height="700" aria-hidden="true" class="guide"></canvas>
+            <canvas id="numberTraceCanvas" width="700" height="700" aria-label="Number tracing area" class="ink"></canvas>
+            <div id="numberSuccessMessage" class="success-message" aria-live="polite">
+              Great tracing! ⭐
+            </div>
+          </div>
+
+          <div class="trace-actions">
+            <button id="checkNumberBtn" class="primary-button" type="button">See how I did! ✨</button>
+            <button id="showNumberGuideBtn" class="secondary-button" type="button">Hide guide</button>
+          </div>
+        </div>
+      </section>
+
+      <nav class="navigation" aria-label="Number navigation">
+        <button id="numberPrevBtn" class="nav-button" type="button">← Back</button>
+        <p class="nav-hint">Use Back and Next, or jump to any number above.</p>
+        <button id="numberNextBtn" class="nav-button" type="button">Next →</button>
+      </nav>
+    </div>
+
+    <div id="countingView" class="math-view" hidden>
+      <section class="letter-card single-column">
+        <div class="counting-heading">
+          <h2 id="countingTitle">Count by 2s</h2>
+          <p class="step-hint">Tap the number that comes next.</p>
+        </div>
+        <div class="counting-sequence" id="countingSequence"></div>
+        <div class="answer-pad" id="countingAnswerPad"></div>
+        <div id="countingSuccessMessage" class="success-message inline" aria-live="polite"></div>
+      </section>
+
+      <nav class="navigation" aria-label="Counting navigation">
+        <button id="countingPrevBtn" class="nav-button" type="button">← Back</button>
+        <div id="countingDots" class="letter-dots" aria-label="Choose a counting challenge"></div>
+        <button id="countingNextBtn" class="nav-button" type="button">Next →</button>
+      </nav>
+    </div>
+
+    <div id="equationsView" class="math-view" hidden>
+      <section class="letter-card single-column">
+        <div class="counting-heading">
+          <h2>Make both sides equal</h2>
+          <p class="step-hint">Tap the missing number.</p>
+        </div>
+        <div class="equation-display" id="equationDisplay"></div>
+        <div class="answer-pad" id="equationAnswerPad"></div>
+        <div id="equationSuccessMessage" class="success-message inline" aria-live="polite"></div>
+      </section>
+
+      <nav class="navigation" aria-label="Equation navigation">
+        <button id="equationPrevBtn" class="nav-button" type="button">← Back</button>
+        <div id="equationDots" class="letter-dots" aria-label="Choose an equation"></div>
+        <button id="equationNextBtn" class="nav-button" type="button">Next →</button>
+      </nav>
+    </div>
+  </main>
+
+  <script src="math.js"></script>
+</body>
+</html>
